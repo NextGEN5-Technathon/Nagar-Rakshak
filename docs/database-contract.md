@@ -14,6 +14,16 @@
 - verification_count (integer, default 0)
 - created_at, updated_at, resolved_at
 
+## What the reports table does
+
+- Citizens can create reports. The database automatically:
+  - Connects the report to the current user (reporter_id).
+  - Forces the first status to "pending".
+
+- Citizens can read their own reports (any status).
+- The public can read only reports where status = "approved".
+- Only moderator accounts can change the status of a report.
+
 ## Categories
 pothole, broken_streetlight, damaged_footpath, garbage,
 blocked_pathway, flooding, unsafe_structure, other
