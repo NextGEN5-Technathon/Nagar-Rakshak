@@ -1,0 +1,32 @@
+export const sampleReports = [
+  {
+    id: 1,
+    category: "Pothole",
+    description: "Large pothole near bus stop, causing traffic slowdown.",
+    image_url: "https://picsum.photos/seed/hazard1/400/300",
+    latitude: 19.0760,
+    longitude: 72.8777,
+    status: "pending",
+    created_at: "2026-09-10T10:30:00Z",
+  },
+  {
+    id: 2,
+    category: "Broken Streetlight",
+    description: "Streetlight not working for past 2 weeks, area is dark at night.",
+    image_url: "https://picsum.photos/seed/hazard2/400/300",
+    latitude: 19.0810,
+    longitude: 72.8820,
+    status: "pending",
+    created_at: "2026-09-11T18:15:00Z",
+  },
+  {
+    id: 3,
+    category: "Open Manhole",
+    description: "Uncovered manhole on footpath, dangerous for pedestrians.",
+    image_url: "https://picsum.photos/seed/hazard3/400/300",
+    latitude: 19.0700,
+    longitude: 72.8700,
+    status: "pending",
+    created_at: "2026-09-12T09:00:00Z",
+  },
+];
