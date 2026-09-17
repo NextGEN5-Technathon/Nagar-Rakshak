@@ -42,3 +42,29 @@ blocked_pathway, flooding, unsafe_structure, other
 ## Notes
 - RLS will be enabled on all exposed tables.
 - Secret key is never used in frontend code.
+
+## Report image storage
+
+Bucket name: `report-images`
+
+Bucket configuration:
+
+- Private bucket
+- Maximum file size: 5 MB
+- Allowed MIME types:
+  - `image/jpeg`
+  - `image/png`
+
+Required object path:
+
+`USER_ID/REPORT_ID/RANDOM_FILENAME.EXTENSION`
+
+Access rules:
+
+- An authenticated citizen may upload only inside their own user-ID folder.
+- A citizen may read only images they own.
+- A moderator may read all report images.
+- Public visitors cannot access report images directly.
+- File overwriting and deletion are not allowed through the current policies.
+
+Important: The bucket was created through the Supabase Dashboard. Its access policies are stored in `supabase/migrations/20260917_storage_policies.sql`.
