@@ -29,4 +29,14 @@ export const sampleReports = [
     status: "pending",
     created_at: "2026-09-12T09:00:00Z",
   },
-];
+  {
+    id: 4,
+    category: "Pothole",
+    description: "Same pothole reported again by another citizen.",
+    image_url: "https://picsum.photos/seed/hazard4/400/300",
+    latitude: 19.0761,
+    longitude: 72.8778,
+    status: "pending",
+    created_at: "2026-09-13T11:00:00Z",
+  },];
+ 

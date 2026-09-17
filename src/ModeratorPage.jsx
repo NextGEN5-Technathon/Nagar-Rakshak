@@ -29,6 +29,15 @@ function ModeratorPage() {
       r.longitude,
       r.created_at,
     ]);
+      function findDuplicates(report) {
+    return reports.filter(
+      (r) =>
+        r.id !== report.id &&
+        r.category === report.category &&
+        Math.abs(r.latitude - report.latitude) < 0.01 &&
+        Math.abs(r.longitude - report.longitude) < 0.01
+    );
+  }
 
     const csvContent =
       [headers, ...rows]
@@ -43,7 +52,15 @@ function ModeratorPage() {
     link.click();
     URL.revokeObjectURL(url);
   }
-
+  function findDuplicates(report) {
+    return reports.filter(
+      (r) =>
+        r.id !== report.id &&
+        r.category === report.category &&
+        Math.abs(r.latitude - report.latitude) < 0.01 &&
+        Math.abs(r.longitude - report.longitude) < 0.01
+    );
+  }
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Moderator Queue</h1>
@@ -69,6 +86,11 @@ function ModeratorPage() {
               style={{ width: "100%", borderRadius: "6px" }}
             />
             <h3>{report.category}</h3>
+                                   {findDuplicates(report).length > 0 && (
+              <p style={{ color: "orange", fontWeight: "bold" }}>
+                ⚠ Possible duplicate
+              </p>
+            )}
             <p><strong>Status:</strong> {report.status}</p>
             <button onClick={() => setSelectedReport(report)}>
               View Details
