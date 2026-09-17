@@ -18,10 +18,38 @@ function ModeratorPage() {
     );
     setSelectedReport(null);
   }
+    function handleExport() {
+    const headers = ["ID", "Category", "Description", "Status", "Latitude", "Longitude", "Reported At"];
+    const rows = reports.map((r) => [
+      r.id,
+      r.category,
+      r.description,
+      r.status,
+      r.latitude,
+      r.longitude,
+      r.created_at,
+    ]);
+
+    const csvContent =
+      [headers, ...rows]
+        .map((row) => row.map((val) => `"${val}"`).join(","))
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "safecity_reports_export.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Moderator Queue</h1>
+            <button onClick={handleExport} style={{ marginBottom: "16px" }}>
+        Export Report
+      </button>
       {reports.length === 0 && <p>No reports to review.</p>}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
@@ -119,4 +147,4 @@ function ModeratorPage() {
   );
 }
 
-export default ModeratorPage;
+export default ModeratorPage; 
