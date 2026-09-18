@@ -14,6 +14,16 @@
 - verification_count (integer, default 0)
 - created_at, updated_at, resolved_at
 
+## What the reports table does
+
+- Citizens can create reports. The database automatically:
+  - Connects the report to the current user (reporter_id).
+  - Forces the first status to "pending".
+
+- Citizens can read their own reports (any status).
+- The public can read only reports where status = "approved".
+- Only moderator accounts can change the status of a report.
+
 ## Categories
 pothole, broken_streetlight, damaged_footpath, garbage,
 blocked_pathway, flooding, unsafe_structure, other
@@ -32,3 +42,29 @@ blocked_pathway, flooding, unsafe_structure, other
 ## Notes
 - RLS will be enabled on all exposed tables.
 - Secret key is never used in frontend code.
+
+## Report image storage
+
+Bucket name: `report-images`
+
+Bucket configuration:
+
+- Private bucket
+- Maximum file size: 5 MB
+- Allowed MIME types:
+  - `image/jpeg`
+  - `image/png`
+
+Required object path:
+
+`USER_ID/REPORT_ID/RANDOM_FILENAME.EXTENSION`
+
+Access rules:
+
+- An authenticated citizen may upload only inside their own user-ID folder.
+- A citizen may read only images they own.
+- A moderator may read all report images.
+- Public visitors cannot access report images directly.
+- File overwriting and deletion are not allowed through the current policies.
+
+Important: The bucket was created through the Supabase Dashboard. Its access policies are stored in `supabase/migrations/20260917_storage_policies.sql`.
