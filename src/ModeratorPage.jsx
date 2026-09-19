@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { sampleReports } from "./data/sampleReports";
+import "./ModeratorPage.css";
 
 function ModeratorPage() {
   const [reports, setReports] = useState(sampleReports);
   const [selectedReport, setSelectedReport] = useState(null);
-     const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   function handleApprove(id) {
@@ -20,7 +21,8 @@ function ModeratorPage() {
     );
     setSelectedReport(null);
   }
-    function handleExport() {
+
+  function handleExport() {
     const headers = ["ID", "Category", "Description", "Status", "Latitude", "Longitude", "Reported At"];
     const rows = reports.map((r) => [
       r.id,
@@ -31,15 +33,6 @@ function ModeratorPage() {
       r.longitude,
       r.created_at,
     ]);
-      function findDuplicates(report) {
-    return reports.filter(
-      (r) =>
-        r.id !== report.id &&
-        r.category === report.category &&
-        Math.abs(r.latitude - report.latitude) < 0.01 &&
-        Math.abs(r.longitude - report.longitude) < 0.01
-    );
-  }
 
     const csvContent =
       [headers, ...rows]
@@ -54,6 +47,7 @@ function ModeratorPage() {
     link.click();
     URL.revokeObjectURL(url);
   }
+
   function findDuplicates(report) {
     return reports.filter(
       (r) =>
@@ -63,25 +57,35 @@ function ModeratorPage() {
         Math.abs(r.longitude - report.longitude) < 0.01
     );
   }
-    const filteredReports = reports.filter((r) => {
-    const categoryMatch = categoryFilter === "all" || r.category === categoryFilter;
-    const statusMatch = statusFilter === "all" || r.status === statusFilter;
-    return categoryMatch && statusMatch;
-  });
+
+   const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+
+  const filteredReports = reports
+    .filter((r) => {
+      const categoryMatch = categoryFilter === "all" || r.category === categoryFilter;
+      const statusMatch = statusFilter === "all" || r.status === statusFilter;
+      return categoryMatch && statusMatch;
+    })
+    .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+
+  function StatusBadge({ status }) {
+    return <span className={`badge badge-${status}`}>{status}</span>;
+  }
+
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+    <div className="moderator-page">
       <h1>Moderator Queue</h1>
-            <button onClick={handleExport} style={{ marginBottom: "16px" }}>
-        Export Report
-      </button>
-            <div style={{ margin: "16px 0", display: "flex", gap: "12px" }}>
+
+      <div className="toolbar">
+        <button className="export-btn" onClick={handleExport}>
+          Export Report
+        </button>
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
           <option value="all">All Categories</option>
           <option value="Pothole">Pothole</option>
           <option value="Broken Streetlight">Broken Streetlight</option>
           <option value="Open Manhole">Open Manhole</option>
         </select>
-
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All Statuses</option>
           <option value="pending">Pending</option>
@@ -89,75 +93,36 @@ function ModeratorPage() {
           <option value="rejected">Rejected</option>
         </select>
       </div>
-      {reports.length === 0 && <p>No reports to review.</p>}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+      {filteredReports.length === 0 && <p>No reports to review.</p>}
+
+      <div className="report-grid">
         {filteredReports.map((report) => (
-          <div
-            key={report.id}
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              padding: "12px",
-              width: "300px",
-            }}
-          >
-            <img
-              src={report.image_url}
-              alt={report.category}
-              style={{ width: "100%", borderRadius: "6px" }}
-            />
-            <h3>{report.category}</h3>
-                                   {findDuplicates(report).length > 0 && (
-              <p style={{ color: "orange", fontWeight: "bold" }}>
-                ⚠ Possible duplicate
-              </p>
-            )}
-            <p><strong>Status:</strong> {report.status}</p>
-            <button onClick={() => setSelectedReport(report)}>
-              View Details
-            </button>
+          <div key={report.id} className="report-card">
+            <img src={report.image_url} alt={report.category} />
+            <div className="report-card-body">
+              <h3>{report.category}</h3>
+              <StatusBadge status={report.status} />
+              {findDuplicates(report).length > 0 && (
+                <p className="duplicate-warning">⚠ Possible duplicate</p>
+              )}
+              <button className="view-btn" onClick={() => setSelectedReport(report)}>
+                View Details
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
       {selectedReport && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onClick={() => setSelectedReport(null)}
-        >
-          <div
-            style={{
-              background: "white",
-              color: "black",
-              padding: "24px",
-              borderRadius: "10px",
-              maxWidth: "450px",
-              width: "90%",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={selectedReport.image_url}
-              alt={selectedReport.category}
-              style={{ width: "100%", borderRadius: "6px" }}
-            />
+        <div className="modal-overlay" onClick={() => setSelectedReport(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedReport.image_url} alt={selectedReport.category} />
             <h2>{selectedReport.category}</h2>
-            <p>{selectedReport.description}</p>
-            <p><strong>Status:</strong> {selectedReport.status}</p>
+            <StatusBadge status={selectedReport.status} />
+            <p style={{ marginTop: "10px" }}>{selectedReport.description}</p>
             <p>
-              <strong>Location:</strong> {selectedReport.latitude},{" "}
-              {selectedReport.longitude}
+              <strong>Location:</strong> {selectedReport.latitude}, {selectedReport.longitude}
             </p>
             <p>
               <strong>Reported:</strong>{" "}
@@ -165,23 +130,17 @@ function ModeratorPage() {
             </p>
 
             {selectedReport.status === "pending" && (
-              <div style={{ marginTop: "12px" }}>
-                <button onClick={() => handleApprove(selectedReport.id)}>
+              <div className="modal-actions">
+                <button className="approve-btn" onClick={() => handleApprove(selectedReport.id)}>
                   Approve
                 </button>
-                <button
-                  onClick={() => handleReject(selectedReport.id)}
-                  style={{ marginLeft: "8px" }}
-                >
+                <button className="reject-btn" onClick={() => handleReject(selectedReport.id)}>
                   Reject
                 </button>
               </div>
             )}
 
-            <button
-              onClick={() => setSelectedReport(null)}
-              style={{ marginTop: "12px", display: "block" }}
-            >
+            <button className="close-btn" onClick={() => setSelectedReport(null)}>
               Close
             </button>
           </div>
@@ -191,4 +150,4 @@ function ModeratorPage() {
   );
 }
 
-export default ModeratorPage; 
+export default ModeratorPage;
