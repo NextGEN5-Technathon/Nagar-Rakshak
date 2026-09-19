@@ -4,6 +4,8 @@ import { sampleReports } from "./data/sampleReports";
 function ModeratorPage() {
   const [reports, setReports] = useState(sampleReports);
   const [selectedReport, setSelectedReport] = useState(null);
+     const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   function handleApprove(id) {
     setReports((prev) =>
@@ -61,16 +63,36 @@ function ModeratorPage() {
         Math.abs(r.longitude - report.longitude) < 0.01
     );
   }
+    const filteredReports = reports.filter((r) => {
+    const categoryMatch = categoryFilter === "all" || r.category === categoryFilter;
+    const statusMatch = statusFilter === "all" || r.status === statusFilter;
+    return categoryMatch && statusMatch;
+  });
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <h1>Moderator Queue</h1>
             <button onClick={handleExport} style={{ marginBottom: "16px" }}>
         Export Report
       </button>
+            <div style={{ margin: "16px 0", display: "flex", gap: "12px" }}>
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="all">All Categories</option>
+          <option value="Pothole">Pothole</option>
+          <option value="Broken Streetlight">Broken Streetlight</option>
+          <option value="Open Manhole">Open Manhole</option>
+        </select>
+
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
       {reports.length === 0 && <p>No reports to review.</p>}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-        {reports.map((report) => (
+        {filteredReports.map((report) => (
           <div
             key={report.id}
             style={{

@@ -38,5 +38,36 @@ export const sampleReports = [
     longitude: 72.8778,
     status: "pending",
     created_at: "2026-09-13T11:00:00Z",
-  },];
+  },
+  {
+    id: 5,
+    category: "Broken Streetlight",
+    description: "Streetlight repaired and confirmed working by moderator.",
+    image_url: "https://picsum.photos/seed/hazard5/400/300",
+    latitude: 19.0850,
+    longitude: 72.8900,
+    status: "approved",
+    created_at: "2026-09-08T14:20:00Z",
+  },
+  {
+    id: 6,
+    category: "Open Manhole",
+    description: "Duplicate/spam report, rejected by moderator.",
+    image_url: "https://picsum.photos/seed/hazard6/400/300",
+    latitude: 19.0650,
+    longitude: 72.8650,
+    status: "rejected",
+    created_at: "2026-09-09T08:00:00Z",
+  },
+  {
+    id: 7,
+    category: "Pothole",
+    description: "Deep pothole near school zone, urgent safety concern.",
+    image_url: "https://picsum.photos/seed/hazard7/400/300",
+    latitude: 19.0900,
+    longitude: 72.8950,
+    status: "pending",
+    created_at: "2026-09-14T07:45:00Z",
+  },
+];
  
