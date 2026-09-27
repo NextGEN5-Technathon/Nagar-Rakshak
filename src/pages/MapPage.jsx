@@ -1,9 +1,14 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { supabase } from '../supabase';
 
-// FIX: Leaflet's default icons do not load correctly in Vite out of the box. 
-// This overrides the broken paths with the correct imported images.
+// CRITICAL VITE FIX: leaflet.heat requires L to be available globally
+window.L = L;
+import 'leaflet.heat';
+
+// Fix for default Leaflet icons in Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -15,45 +20,85 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// DELIVERABLE: Five sample reports mapped directly around Sion, Mumbai
-const sampleReports = [
-  { id: 1, lat: 19.0480, lng: 72.8620, category: 'Pothole', description: 'Deep pothole causing traffic slowdowns near the station.' },
-  { id: 2, lat: 19.0450, lng: 72.8640, category: 'Broken Streetlight', description: 'Streetlight has been out for 3 weeks near VPPCOE campus.' },
-  { id: 3, lat: 19.0475, lng: 72.8655, category: 'Garbage Dump', description: 'Uncollected garbage spilling onto the footpath.' },
-  { id: 4, lat: 19.0440, lng: 72.8610, category: 'Open Drain', description: 'Missing manhole cover near the main crossing.' },
-  { id: 5, lat: 19.0495, lng: 72.8600, category: 'Damaged Railing', description: 'Bridge safety railing is completely broken.' },
-];
+// 1. We create a custom component to bridge Leaflet.heat into React
+function HeatmapLayer({ points }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!points || points.length === 0) return;
+    
+    // Create the thermal layer
+    const heatLayer = L.heatLayer(points, {
+      radius: 25,
+      blur: 15,
+      maxZoom: 15,
+      gradient: { 0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red' }
+    }).addTo(map);
+
+    // Cleanup when component unmounts
+    return () => {
+      map.removeLayer(heatLayer);
+    };
+  }, [map, points]);
+
+  return null;
+}
 
 function MapPage() {
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    async function fetchReports() {
+      const { data, error } = await supabase.from('reports').select('*');
+      if (error) {
+        console.error("Supabase Error:", error);
+      } else {
+        setReports(data);
+      }
+    }
+    fetchReports();
+  }, []);
+
+  // 2. Hardcoded thermal density points (Sion Area) so you can see the visual effect 
+  // format: [latitude, longitude, intensity]
+  const thermalData = [
+    [19.0465, 72.8633, 0.9],
+    [19.0475, 72.8623, 0.6],
+    [19.0455, 72.8643, 0.8],
+    [19.0485, 72.8613, 0.4],
+    [19.0445, 72.8653, 0.7],
+    [19.0460, 72.8620, 1.0]
+  ];
+
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
       <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 'bold' }}>Intelligence Map</h1>
-        <p style={{ opacity: 0.7 }}>Live hazard-density visualization (Sion)</p>
+        <p style={{ opacity: 0.7 }}>Live hazard-density visualization (Sion Area)</p>
       </div>
       
-      {/* BRUTE-FORCE HEIGHT: minHeight guarantees it cannot collapse to 0px */}
       <div style={{ flexGrow: 1, width: '100%', minHeight: '600px', border: '2px solid #333', borderRadius: '12px', overflow: 'hidden' }}>
-        <MapContainer 
-          center={[19.0465, 72.8633]} 
-          zoom={15} 
-          style={{ height: '100%', width: '100%' }}
-        >
+        <MapContainer center={[19.0465, 72.8633]} zoom={15} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           
-          {sampleReports.map((report) => (
-            <Marker key={report.id} position={[report.lat, report.lng]}>
-              <Popup>
-                {/* Forcing black text so the global dark mode doesn't make it invisible */}
-                <div style={{ color: 'black' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{report.category}</div>
-                  <div style={{ fontSize: '12px', marginTop: '4px' }}>{report.description}</div>
-                </div>
-              </Popup>
-            </Marker>
+          {/* Inject the thermal layer */}
+          <HeatmapLayer points={thermalData} />
+          
+          {/* Render individual database markers on top of the heatmap */}
+          {reports.map((report) => (
+            report.latitude && report.longitude ? (
+              <Marker key={report.id} position={[report.latitude, report.longitude]}>
+                <Popup>
+                  <div style={{ color: 'black' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{report.category || 'Hazard'}</div>
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>{report.description || 'No details provided.'}</div>
+                  </div>
+                </Popup>
+              </Marker>
+            ) : null
           ))}
         </MapContainer>
       </div>
