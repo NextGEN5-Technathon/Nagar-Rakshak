@@ -1,2 +1,2 @@
-# SafeCity-Platform
+# Nagar Rakshak
 Community public-space hazard reporting and visualization prototype
