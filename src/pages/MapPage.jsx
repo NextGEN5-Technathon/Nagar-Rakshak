@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '../supabase';
 
-// CRITICAL VITE FIX: leaflet.heat requires L to be available globally
+// CRITICAL VITE FIX
 window.L = L;
 import 'leaflet.heat';
 
-// Fix for default Leaflet icons in Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -20,14 +19,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// 1. We create a custom component to bridge Leaflet.heat into React
 function HeatmapLayer({ points }) {
   const map = useMap();
 
   useEffect(() => {
     if (!points || points.length === 0) return;
     
-    // Create the thermal layer
     const heatLayer = L.heatLayer(points, {
       radius: 25,
       blur: 15,
@@ -35,11 +32,13 @@ function HeatmapLayer({ points }) {
       gradient: { 0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red' }
     }).addTo(map);
 
-    // Cleanup when component unmounts
     return () => {
-      map.removeLayer(heatLayer);
+      // Ensure map still exists before removing to prevent teardown errors
+      if (map && map.hasLayer(heatLayer)) {
+        map.removeLayer(heatLayer);
+      }
     };
-  }, [map, points]);
+  }, [map, points]); // 'points' is now stable thanks to useMemo
 
   return null;
 }
@@ -49,26 +48,41 @@ function MapPage() {
 
   useEffect(() => {
     async function fetchReports() {
-      const { data, error } = await supabase.from('reports').select('*');
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('status', 'approved');
+      
       if (error) {
         console.error("Supabase Error:", error);
       } else {
-        setReports(data);
+        setReports(data || []);
       }
     }
     fetchReports();
   }, []);
 
-  // 2. Hardcoded thermal density points (Sion Area) so you can see the visual effect 
-  // format: [latitude, longitude, intensity]
-  const thermalData = [
-    [19.0465, 72.8633, 0.9],
-    [19.0475, 72.8623, 0.6],
-    [19.0455, 72.8643, 0.8],
-    [19.0485, 72.8613, 0.4],
-    [19.0445, 72.8653, 0.7],
-    [19.0460, 72.8620, 1.0]
-  ];
+  // Dynamically generate thermal points from the Supabase reports.
+  // useMemo ensures we don't recreate this array unless 'reports' actually changes,
+  // preventing infinite re-render loops in the HeatmapLayer.
+  const dynamicThermalData = useMemo(() => {
+    // If the DB is empty, optionally fall back to the hardcoded Sion coordinates for testing
+    if (reports.length === 0) {
+      return [
+        [19.0465, 72.8633, 0.9],
+        [19.0475, 72.8623, 0.6],
+        [19.0455, 72.8643, 0.8],
+        [19.0485, 72.8613, 0.4],
+        [19.0445, 72.8653, 0.7],
+        [19.0460, 72.8620, 1.0]
+      ];
+    }
+
+    return reports
+      .filter(r => r.latitude && r.longitude)
+      // Assume an intensity of 0.8 if your DB doesn't have an 'intensity' column yet
+      .map(r => [r.latitude, r.longitude, r.intensity || 0.8]);
+  }, [reports]);
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
@@ -84,13 +98,11 @@ function MapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
           
-          {/* Inject the thermal layer */}
-          <HeatmapLayer points={thermalData} />
+          <HeatmapLayer points={dynamicThermalData} />
           
-          {/* Render individual database markers on top of the heatmap */}
           {reports.map((report) => (
             report.latitude && report.longitude ? (
-              <Marker key={report.id} position={[report.latitude, report.longitude]}>
+              <Marker key={report.id} position={[report.public_latitude, report.public_longitude]}>
                 <Popup>
                   <div style={{ color: 'black' }}>
                     <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{report.category || 'Hazard'}</div>
